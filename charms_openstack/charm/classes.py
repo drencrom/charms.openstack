@@ -642,7 +642,7 @@ class OpenStackAPICharm(OpenStackCharm):
         @returns List of package to enable token caching
         """
         packages = []
-        if self.enable_memcache(release=release):
+        if self.enable_memcache(release=release) and not self.configuration_class.get_external_memcache():
             if self.python_version == 2:
                 packages.extend(['memcached', 'python-memcache'])
             else:

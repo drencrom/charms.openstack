@@ -1093,6 +1093,13 @@ class APIConfigurationAdapter(ConfigurationAdapter):
                 ctxt['memcache_url'] = 'inet6:{}:{}'.format(
                     ctxt['memcache_server_formatted'],
                     ctxt['memcache_port'])
+
+            hookenv.log('memcache_url extra: {}'.format(ctxt['memcache_url']), level=hookenv.WARNING)
+            # If external memcache servers are available use those instead of localhost
+            memcache_servers = self.get_external_memcache()
+            if memcache_servers:
+                ctxt['memcache_url'] = ','.join([s for s in memcache_servers])
+                hookenv.log('memcache_url: {}'.format(ctxt['memcache_url']), level=hookenv.WARNING)
         return ctxt
 
     @property
@@ -1152,6 +1159,16 @@ class APIConfigurationAdapter(ConfigurationAdapter):
                                if v is not None)
         return ch_context.WSGIWorkerConfigContext(**filtered_kwargs)()
 
+    def get_external_memcache(self):
+        memcache_servers = []
+
+        hookenv.log("tettt {}".format(hookenv.relation_ids()), level=hookenv.WARNING)
+        for rid in hookenv.relation_ids('coordinator-memcached'):
+            for unit in hookenv.related_units(rid):
+                relation_data = hookenv.relation_get(rid=rid, unit=unit)
+                memcache_servers += ["{}:{}".format(relation_data.get('host'), relation_data.get('port'))]
+
+        return memcache_servers
 
 def make_default_relation_adapter(base_cls, relation, properties):
     """Create a default relation adapter using a base class, and custom
